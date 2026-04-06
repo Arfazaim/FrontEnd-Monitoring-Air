@@ -12,12 +12,37 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useState, useEffect } from 'react';
+import { apiService } from '../services/apiService';
 
+const ConnectionStatus = () => {
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      const status = await apiService.checkConnection();
+      setIsConnected(status);
+    };
+    check();
+    const interval = setInterval(check, 10000); // Cek setiap 10 detik
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2 p-4 text-xs font-medium">
+      <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`} />
+      <span className={isConnected ? 'text-green-500' : 'text-red-500'}>
+        {isConnected ? 'API CONNECTED' : 'API DISCONNECTED'}
+      </span>
+    </div>
+  );
+};
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Chemical Logs", url: "/logs", icon: FlaskConical },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
+
 
 export function AppSidebar() {
   const { state } = useSidebar();

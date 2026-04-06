@@ -30,9 +30,13 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<SensorHistory[]>([]);
 
   const fetchData = useCallback(async () => {
-    const data = await apiService.getSensors();
-    setCurrent(data.current);
-    setHistory(data.history);
+    try {
+      const data = await apiService.getSensors();
+      setCurrent(data.current);
+      setHistory(data.history);
+    } catch (error) {
+      console.error("Gagal mengambil data sensor:", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -44,38 +48,39 @@ export default function DashboardPage() {
   if (!current) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground font-mono animate-pulse">Loading sensors...</div>
+        <div className="text-muted-foreground font-mono animate-pulse">Loading sensors... (Pastikan Backend Menyala)</div>
       </div>
     );
   }
 
-  const isLayak = current.status === "LAYAK";
+  // Perbaikan: Mencocokkan dengan data dari Backend ("Layak" bukan "LAYAK")
+  const isLayak = current.status === "Layak";
 
   return (
     <div className="space-y-6">
       {/* Status Banner */}
       <div className={`flex items-center gap-3 rounded-lg border p-4 ${
         isLayak 
-          ? "border-success/30 bg-success/10 glow-success" 
-          : "border-destructive/30 bg-destructive/10 glow-destructive"
+          ? "border-green-500/30 bg-green-500/10" 
+          : "border-red-500/30 bg-red-500/10"
       }`}>
         {isLayak ? (
-          <CheckCircle className="h-6 w-6 text-success" />
+          <CheckCircle className="h-6 w-6 text-green-500" />
         ) : (
-          <AlertTriangle className="h-6 w-6 text-destructive animate-pulse-glow" />
+          <AlertTriangle className="h-6 w-6 text-red-500 animate-pulse" />
         )}
         <div>
           <p className="font-mono text-lg font-bold tracking-wider">
-            Status: <span className={isLayak ? "text-success" : "text-destructive"}>{current.status}</span>
+            Status: <span className={isLayak ? "text-green-500" : "text-red-500"}>{current.status}</span>
           </p>
           {!isLayak && (
-            <p className="text-sm text-destructive/80">
-              ⚠ PAC Dosing Pump is ACTIVE — Water quality below threshold
+            <p className="text-sm text-red-500/80">
+              ⚠ PAC Dosing Pump is ACTIVE — Kualitas air di bawah standar
             </p>
           )}
         </div>
         {current.pumpActive && (
-          <Badge variant="destructive" className="ml-auto font-mono animate-pulse-glow">
+          <Badge variant="destructive" className="ml-auto font-mono animate-pulse bg-red-600">
             PUMP ON
           </Badge>
         )}
@@ -88,7 +93,7 @@ export default function DashboardPage() {
           value={current.ph.toFixed(2)}
           unit="pH"
           icon={Droplets}
-          color="text-chart-ph"
+          color="text-blue-500"
           subtitle="Target: 6.5 – 8.5"
         />
         <SensorCard
@@ -96,23 +101,23 @@ export default function DashboardPage() {
           value={current.turbidity.toFixed(1)}
           unit="NTU"
           icon={Waves}
-          color="text-chart-turbidity"
-          subtitle="Lower is clearer"
+          color="text-orange-500"
+          subtitle="Maksimal: 25 NTU"
         />
         <SensorCard
           title="TDS"
           value={current.tds.toFixed(0)}
           unit="ppm"
           icon={Zap}
-          color="text-chart-tds"
-          subtitle="Total Dissolved Solids"
+          color="text-purple-500"
+          subtitle="Maksimal: 500 ppm"
         />
         <SensorCard
           title="Battery Voltage"
           value={current.battery.toFixed(1)}
           unit="V"
           icon={Battery}
-          color="text-primary"
+          color="text-emerald-500"
           subtitle="ESP32 Power Supply"
         />
       </div>
@@ -120,32 +125,23 @@ export default function DashboardPage() {
       {/* Chart */}
       <Card className="border-border/50 bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-sm font-medium text-muted-foreground">Sensor History</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Sensor History (Real-time)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 15% 20%)" />
-                <XAxis
-                  dataKey="timestamp"
-                  tick={{ fill: "hsl(215 15% 55%)", fontSize: 11 }}
-                  tickLine={false}
-                />
-                <YAxis tick={{ fill: "hsl(215 15% 55%)", fontSize: 11 }} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="timestamp" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(220 18% 13%)",
-                    border: "1px solid hsl(220 15% 20%)",
-                    borderRadius: "8px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 12,
-                  }}
+                  contentStyle={{ backgroundColor: "#1f2937", color: "#f9fafb", borderRadius: "8px", border: "none" }}
+                  itemStyle={{ color: "#e5e7eb" }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="ph" stroke="hsl(185 70% 50%)" strokeWidth={2} dot={false} name="pH" />
-                <Line type="monotone" dataKey="turbidity" stroke="hsl(38 92% 55%)" strokeWidth={2} dot={false} name="Turbidity (NTU)" />
-                <Line type="monotone" dataKey="tds" stroke="hsl(280 60% 60%)" strokeWidth={2} dot={false} name="TDS (ppm)" />
+                <Line type="monotone" dataKey="ph" stroke="#3b82f6" strokeWidth={2} dot={false} name="pH" />
+                <Line type="monotone" dataKey="turbidity" stroke="#f97316" strokeWidth={2} dot={false} name="Turbidity (NTU)" />
+                <Line type="monotone" dataKey="tds" stroke="#8b5cf6" strokeWidth={2} dot={false} name="TDS (ppm)" />
               </LineChart>
             </ResponsiveContainer>
           </div>

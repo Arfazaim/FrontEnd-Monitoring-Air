@@ -95,6 +95,15 @@ export const apiService = {
     await api.post('/config', config);
   },
 
+  async checkConnection(): Promise<boolean> {
+    try {
+      await api.get('/sensors'); // Jika berhasil ambil data, berarti konek
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  
   // 5. Link Download Export CSV
   getExportUrl(): string {
     return `${API_BASE}/export`;
