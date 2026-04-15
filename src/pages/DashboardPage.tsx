@@ -114,14 +114,18 @@ function SensorCard({
       </CardHeader>
       <CardContent className="px-4 pb-3">
         <div className="flex items-baseline gap-1 mb-1">
-          <span className="font-mono text-3xl font-bold tracking-tight text-foreground">
-            {sensorKey === "ph" ? value.toFixed(2)
-              : sensorKey === "battery" ? value.toFixed(1)
-              : sensorKey === "tds" ? value.toFixed(0)
-              : value.toFixed(1)}
-          </span>
-          <span className="text-sm text-muted-foreground font-mono">{t.unit}</span>
-        </div>
+  <span className="font-mono text-3xl font-bold tracking-tight text-foreground">
+    {/* Kita bungkus value dengan Number() untuk memastikan tipe datanya angka */}
+    {(() => {
+      const numValue = Number(value || 0); 
+      return sensorKey === "ph" ? numValue.toFixed(2)
+        : sensorKey === "battery" ? numValue.toFixed(1)
+        : sensorKey === "tds" ? numValue.toFixed(0)
+        : numValue.toFixed(1);
+    })()}
+  </span>
+  <span className="text-sm text-muted-foreground font-mono">{t.unit}</span>
+</div>
         <div className="mb-2">
           <Progress
             value={pct}
