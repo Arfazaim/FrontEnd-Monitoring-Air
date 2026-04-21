@@ -10,12 +10,14 @@ import { useState, useEffect } from "react";
 import { apiService } from "../services/apiService";
 import { cn } from "@/lib/utils";
 
+// 1. KONFIGURASI MENU: Edit di sini untuk menambah/mengurangi menu
 const items = [
-  { title: "Dashboard",      url: "/",        icon: LayoutDashboard, desc: "Real-time monitoring" },
-  { title: "Chemical Logs",  url: "/logs",    icon: FlaskConical,    desc: "Riwayat injeksi PAC"  },
-  { title: "Settings",       url: "/settings",icon: Settings,        desc: "Kalibrasi & kontrol"  },
+  { title: "Dashboarddd",     url: "/",      icon: LayoutDashboard, desc: "Real-time monitoring" },
+  { title: "Logs",            url: "/logs",    icon: FlaskConical,    desc: "Riwayat injeksi PAC"  },
+  { title: "Settings",        url: "/settings",icon: Settings,        desc: "Kalibrasi & kontrol"  },
 ];
 
+// 2. KOMPONEN INDIKATOR KONEKSI (Bagian bawah sidebar)
 function ConnectionStatus({ collapsed }: { collapsed: boolean }) {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
@@ -25,10 +27,11 @@ function ConnectionStatus({ collapsed }: { collapsed: boolean }) {
       setIsConnected(status);
     };
     check();
-    const interval = setInterval(check, 10000);
+    const interval = setInterval(check, 10000); // Cek koneksi tiap 10 detik
     return () => clearInterval(interval);
   }, []);
 
+  // Tampilan saat Sidebar ditekuk (hanya muncul bulatan/dot)
   if (collapsed) {
     return (
       <div className="flex justify-center p-2">
@@ -41,24 +44,29 @@ function ConnectionStatus({ collapsed }: { collapsed: boolean }) {
     );
   }
 
+  // Tampilan Box Status saat Sidebar terbuka
   return (
     <div className="px-3 pb-3">
       <div className={cn(
         "flex items-center gap-2 rounded-lg px-3 py-2 border text-xs font-mono",
+        // Warna border dan background box berdasarkan status
         isConnected === null ? "border-border/40 bg-muted/20 text-muted-foreground" :
         isConnected
           ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
           : "border-red-500/20 bg-red-500/8 text-red-400"
       )}>
+        {/* Indikator Bulat Berkedip */}
         <div className={cn(
           "w-2 h-2 rounded-full shrink-0",
           isConnected === null ? "bg-muted-foreground animate-pulse" :
           isConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.6)]" : "bg-red-500"
         )} />
+        
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[10px] tracking-wider">
             {isConnected === null ? "MEMERIKSA..." : isConnected ? "API CONNECTED" : "API DISCONNECTED"}
           </p>
+          {/* Menampilkan URL API dari .env */}
           <p className="text-[9px] opacity-70 truncate mt-0.5">{import.meta.env.VITE_API_URL ?? "—"}</p>
         </div>
         <Activity className="h-3 w-3 shrink-0 opacity-60" />
@@ -67,6 +75,7 @@ function ConnectionStatus({ collapsed }: { collapsed: boolean }) {
   );
 }
 
+// 3. KOMPONEN UTAMA SIDEBAR
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -76,9 +85,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          {/* Brand */}
+          {/* HEADER / BRANDING */}
           <SidebarGroupLabel className="mb-2 mt-3 px-3">
             {!collapsed ? (
+              // Tampilan Logo & Nama saat terbuka
               <div className="flex items-center gap-2.5">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
                   <Droplets className="h-4 w-4 text-primary" />
@@ -93,6 +103,7 @@ export function AppSidebar() {
                 </div>
               </div>
             ) : (
+              // Tampilan Logo saat ditekuk
               <div className="flex justify-center w-full">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
                   <Droplets className="h-4 w-4 text-primary" />
@@ -101,14 +112,17 @@ export function AppSidebar() {
             )}
           </SidebarGroupLabel>
 
+          {/* Garis Pemisah Tipis */}
           <div className="my-2 mx-3 h-px bg-border/40" />
 
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
               {items.map((item) => {
+                // Logika untuk menentukan apakah menu sedang aktif (dibuka)
                 const isActive = item.url === "/"
                   ? location.pathname === "/"
                   : location.pathname.startsWith(item.url);
+                
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
@@ -117,21 +131,28 @@ export function AppSidebar() {
                         end={item.url === "/"}
                         className={cn(
                           "flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200",
+                          // Gaya saat menu TIDAK aktif
                           "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                          // Gaya saat menu AKTIF
                           isActive && "bg-sidebar-accent text-primary font-medium"
                         )}
                         activeClassName=""
                       >
+                        {/* Ikon Menu */}
                         <item.icon className={cn(
                           "h-4 w-4 shrink-0 transition-colors",
                           isActive ? "text-primary" : "text-muted-foreground"
                         )} />
+                        
+                        {/* Label & Deskripsi (Hanya muncul jika tidak ditekuk) */}
                         {!collapsed && (
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium leading-none">{item.title}</p>
-                            <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">{item.desc}</p>
+                            <p className="text-[9px] text-muted-foreground font-mono">{item.desc}</p>
                           </div>
                         )}
+                        
+                        {/* Indikator titik kecil di sebelah kanan menu yang aktif */}
                         {!collapsed && isActive && (
                           <div className="w-1 h-1 rounded-full bg-primary shrink-0" />
                         )}
@@ -145,6 +166,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* FOOTER SIDEBAR (Status API) */}
       <SidebarFooter>
         <div className="mx-3 mb-2 h-px bg-border/40" />
         <ConnectionStatus collapsed={collapsed} />
