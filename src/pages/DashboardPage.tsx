@@ -1,16 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Droplets, Waves, Zap, Battery, AlertTriangle, CheckCircle,
-  TrendingUp, TrendingDown, Minus, Activity, Clock, RefreshCw
+  TrendingUp, TrendingDown, Minus, Activity, Clock, RefreshCw, Brain
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, AreaChart, Area
 } from "recharts";
-import { apiService, type SensorData, type SensorHistory } from "@/services/apiService";
+import {
+  apiService, type SensorData, type SensorHistory,
+  type MLAccuracy, type FeatureImportance
+} from "@/services/apiService";
 import { cn } from "@/lib/utils";
 
 // ── Threshold helpers ──────────────────────────────────────────
@@ -35,14 +38,14 @@ function getStatus(key: keyof typeof thresholds, value: number) {
 }
 
 const statusColors = {
-  good:    "text-emerald-400",
-  warning: "text-amber-400",
-  danger:  "text-red-400",
+  good:    "text-emerald-500",
+  warning: "text-amber-500",
+  danger:  "text-red-500",
 };
 const statusBg = {
-  good:    "border-emerald-500/20 bg-emerald-500/5",
-  warning: "border-amber-500/20 bg-amber-500/5",
-  danger:  "border-red-500/20 bg-red-500/5",
+  good:    "border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/10",
+  warning: "border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/10",
+  danger:  "border-red-500/20 bg-red-50/50 dark:bg-red-500/10",
 };
 
 // ── Trend arrow ───────────────────────────────────────────────
@@ -90,54 +93,41 @@ function SensorCard({
   const t = thresholds[sensorKey];
   const st = getStatus(sensorKey, value);
   const pct = Math.min(100, Math.max(0, ((value - t.min) / (t.max - t.min)) * 100));
+  
+  const numValue = Number(value || 0); 
+  const displayVal = sensorKey === "ph" ? numValue.toFixed(2)
+    : sensorKey === "battery" ? numValue.toFixed(1)
+    : sensorKey === "tds" ? numValue.toFixed(0)
+    : numValue.toFixed(1);
 
   return (
-    <Card className={cn("relative overflow-hidden border transition-all duration-500 animate-fade-in", statusBg[st])}>
-      <CardHeader className="flex flex-row items-start justify-between pb-1 pt-4 px-4">
-        <div className="flex items-center gap-2">
-          <div className={cn("rounded-md p-1.5", `bg-${color}-500/10`)}>
-            <Icon className={cn("h-4 w-4", `text-${color}-400`)} />
-          </div>
-          <span className="text-xs font-mono font-medium text-muted-foreground uppercase tracking-wider">
-            {t.label}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <TrendIcon history={history} dataKey={sensorKey === "turbidity" ? "turbidity" : sensorKey} />
-          <Badge
-            variant="outline"
-            className={cn("text-[10px] font-mono px-1.5 py-0 border-0 font-semibold", statusColors[st])}
-          >
-            {st === "good" ? "NORMAL" : st === "warning" ? "WASPADA" : "BAHAYA"}
+    <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-md animate-fade-in">
+      <CardHeader>
+        <CardDescription className="flex items-center gap-1.5 font-medium text-sm">
+          <Icon className="h-4 w-4" />
+          {t.label}
+        </CardDescription>
+        <CardTitle className="text-2xl font-semibold tabular-nums mt-1 text-foreground">
+          {displayVal} <span className="text-sm text-muted-foreground font-normal">{t.unit}</span>
+        </CardTitle>
+        <div className="absolute right-4 top-4">
+          <Badge variant="outline" className={cn("flex gap-1 px-1.5 py-0 font-medium", statusColors[st], statusBg[st])}>
+            <TrendIcon history={history} dataKey={sensorKey === "turbidity" ? "turbidity" : sensorKey} />
+            {st === "good" ? "Normal" : st === "warning" ? "Waspada" : "Bahaya"}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-3">
-        <div className="flex items-baseline gap-1 mb-1">
-  <span className="font-mono text-3xl font-bold tracking-tight text-foreground">
-    {/* Kita bungkus value dengan Number() untuk memastikan tipe datanya angka */}
-    {(() => {
-      const numValue = Number(value || 0); 
-      return sensorKey === "ph" ? numValue.toFixed(2)
-        : sensorKey === "battery" ? numValue.toFixed(1)
-        : sensorKey === "tds" ? numValue.toFixed(0)
-        : numValue.toFixed(1);
-    })()}
-  </span>
-  <span className="text-sm text-muted-foreground font-mono">{t.unit}</span>
-</div>
-        <div className="mb-2">
-          <Progress
-            value={pct}
-            className="h-1"
-            style={{ ["--progress-color" as any]: st === "good" ? "hsl(148 68% 42%)" : st === "warning" ? "hsl(38 95% 52%)" : "hsl(0 75% 58%)" }}
-          />
-          <div className="flex justify-between mt-0.5">
-            <span className="text-[9px] font-mono text-muted-foreground/60">{t.min}{t.unit}</span>
-            <span className="text-[9px] font-mono text-muted-foreground/60">{t.max}{t.unit}</span>
+      <CardContent className="pb-4 space-y-3">
+        <div className="w-full">
+          <Progress value={pct} className={cn("h-1.5", statusBg[st])} indicatorColor={st === "good" ? "bg-emerald-500" : st === "warning" ? "bg-amber-500" : "bg-red-500"} />
+          <div className="flex justify-between mt-1.5 w-full">
+            <span className="text-[10px] text-muted-foreground">Min: {t.min}</span>
+            <span className="text-[10px] text-muted-foreground">Max: {t.max}</span>
           </div>
         </div>
-        <Sparkline data={history} dataKey={sensorKey === "turbidity" ? "turbidity" : sensorKey} color={sparkColor} />
+        <div className="w-full">
+          <Sparkline data={history} dataKey={sensorKey === "turbidity" ? "turbidity" : sensorKey} color={sparkColor} />
+        </div>
       </CardContent>
     </Card>
   );
@@ -192,6 +182,139 @@ function WQIGauge({ current }: { current: SensorData }) {
   );
 }
 
+// ── ML Score Gauge ─────────────────────────────────────────
+function MLScoreGauge({ score, confidence, prediction }: {
+  score: number;
+  confidence: string;
+  prediction: string;
+}) {
+  const color  = score >= 60 ? "#f87171" : score >= 40 ? "#fbbf24" : "#34d399";
+  const deg    = (score / 100) * 180;
+  const confColor = confidence === 'Tinggi' ? 'text-emerald-400'
+                  : confidence === 'Sedang' ? 'text-amber-400' : 'text-red-400';
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <svg width="120" height="68" viewBox="0 0 120 68">
+        <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="hsl(222 18% 18%)" strokeWidth="10" strokeLinecap="round" />
+        <path
+          d="M10 60 A50 50 0 0 1 110 60"
+          fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
+          strokeDasharray="157" strokeDashoffset={157 - (deg / 180) * 157}
+          style={{ transition: "stroke-dashoffset 1s ease" }}
+        />
+        <text x="60" y="54" textAnchor="middle" fontSize="20" fontWeight="700" fill={color} fontFamily="JetBrains Mono">{score.toFixed(0)}%</text>
+        <text x="60" y="66" textAnchor="middle" fontSize="7" fill="#6b7280" fontFamily="JetBrains Mono">Tdk Layak</text>
+      </svg>
+      <div className="text-center">
+        <p className="text-xs font-mono font-bold" style={{ color }}>{prediction}</p>
+        <p className={cn("text-[10px] font-mono", confColor)}>Keyakinan: {confidence}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Model Comparison Card ─────────────────────────────────
+function ModelComparisonCard({ mlData }: { mlData: MLAccuracy }) {
+  const modelColors: Record<string, string> = {
+    'Random Forest': 'text-emerald-500',
+    'Decision Tree': 'text-sky-500',
+    'Naive Bayes'  : 'text-purple-500',
+  };
+  return (
+    <Card className="border-border">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Brain className="h-4 w-4 text-purple-500" />
+            Perbandingan Model ML
+          </CardTitle>
+          <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
+            {mlData.total_data} data training
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {mlData.models.map((m) => (
+          <div key={m.key} className={cn(
+            "rounded-lg p-3 border transition-all",
+            m.is_best ? "border-purple-500/40 bg-purple-500/5" : "border-border/40 bg-muted/20"
+          )}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={cn("text-xs font-semibold", modelColors[m.name] ?? 'text-foreground')}>
+                  {m.name}
+                </span>
+                {m.is_best && (
+                  <Badge className="text-[9px] px-1.5 py-0 bg-purple-600 hover:bg-purple-700">Terbaik</Badge>
+                )}
+              </div>
+              <span className="text-sm font-mono font-bold">{m.accuracy}%</span>
+            </div>
+            <Progress value={m.accuracy} className="h-1.5 mb-2" indicatorColor="bg-primary" />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ['Precision', m.precision],
+                ['Recall',    m.recall],
+                ['F1-Score',  m.f1_score],
+              ].map(([label, val]) => (
+                <div key={String(label)} className="text-center">
+                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                  <p className="text-[11px] font-mono font-semibold">{val}%</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Feature Importance Bar ─────────────────────────────────
+const FEAT_COLORS: Record<string, string> = {
+  ph       : "hsl(180 75% 48%)",
+  kekeruhan: "hsl(38 95% 52%)",
+  tds      : "hsl(270 65% 65%)",
+};
+const FEAT_LABELS: Record<string, string> = {
+  ph: "pH", kekeruhan: "Kekeruhan (NTU)", tds: "TDS (ppm)"
+};
+
+function FeatureImportanceBar({ data }: { data: FeatureImportance[] }) {
+  return (
+    <Card className="border-border">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <Activity className="h-4 w-4 text-sky-500" />
+          Kontribusi Fitur Sensor
+          <span className="text-[10px] text-muted-foreground ml-1 font-normal">(Random Forest)</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {data.map((item) => (
+          <div key={item.feature}>
+            <div className="flex justify-between mb-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                {FEAT_LABELS[item.feature] ?? item.feature}
+              </span>
+              <span className="text-xs font-mono font-semibold">{item.importance.toFixed(1)}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${item.importance}%`,
+                  background: FEAT_COLORS[item.feature] ?? "hsl(215 60% 60%)",
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────
 export default function DashboardPage() {
   const [current, setCurrent]         = useState<SensorData | null>(null);
@@ -199,6 +322,9 @@ export default function DashboardPage() {
   const [lastUpdate, setLastUpdate]   = useState<Date | null>(null);
   const [refreshing, setRefreshing]   = useState(false);
   const [activeChart, setActiveChart] = useState<"ph" | "turbidity" | "tds">("ph");
+  // ML state
+  const [mlAccuracy, setMlAccuracy]   = useState<MLAccuracy | null>(null);
+  const [mlFeatures, setMlFeatures]   = useState<FeatureImportance[]>([]);
 
   const fetchData = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -217,6 +343,11 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => fetchData(), 5000);
+
+    // Muat data ML (akurasi + feature importance) sekali saat pertama load
+    apiService.getMLAccuracy().then(d => { if (d) setMlAccuracy(d); });
+    apiService.getFeatureImportance().then(d => { if (d.length) setMlFeatures(d); });
+
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -250,18 +381,18 @@ export default function DashboardPage() {
 
       {/* ── Header row ── */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard Monitoring</h1>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5 flex items-center gap-1.5">
-            <Clock className="h-3 w-3" />
-            {lastUpdate ? `Update: ${lastUpdate.toLocaleTimeString("id-ID")}` : "Menunggu data..."}
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard Monitoring</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            {lastUpdate ? `Terakhir diperbarui: ${lastUpdate.toLocaleTimeString("id-ID")}` : "Menunggu data..."}
           </p>
         </div>
         <button
           onClick={() => fetchData(true)}
-          className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors border border-border rounded-md px-3 py-1.5 bg-card/50 hover:bg-card"
+          className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors border rounded-md px-3 py-1.5 shadow-sm"
         >
-          <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
+          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
           Refresh
         </button>
       </div>
@@ -289,14 +420,14 @@ export default function DashboardPage() {
           <p className="text-xs text-muted-foreground mt-0.5">
             {isLayak
               ? "Semua parameter dalam batas normal. Sistem berjalan optimal."
-              : "⚠ Kualitas air di bawah standar — PAC Dosing Pump aktif secara otomatis."}
+              : "⚠ Kualitas air di bawah standar — Solenoid Valve terbuka otomatis."}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <WQIGauge current={current} />
-          {current.pumpActive && (
-            <Badge variant="destructive" className="font-mono text-xs animate-pulse bg-red-600/90 border-red-500">
-              ⚡ PUMP ON
+          {current.solenoidActive && (
+            <Badge variant="destructive" className="font-mono text-xs animate-pulse bg-orange-600/90 border-orange-500">
+              🚨 SOLENOID BUKA
             </Badge>
           )}
         </div>
@@ -310,8 +441,82 @@ export default function DashboardPage() {
         <SensorCard sensorKey="battery"   value={current.battery}   history={history} icon={Battery}  color="emerald" sparkColor="hsl(148 68% 42%)" />
       </div>
 
+      {/* ── ML Section ── */}
+      {(current.ml || mlAccuracy) && (
+        <div className="space-y-4">
+          {/* Header ML */}
+          <div className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-purple-400" />
+            <h2 className="text-sm font-mono font-semibold text-muted-foreground tracking-wider uppercase">
+              Prediksi Machine Learning
+            </h2>
+            <Badge variant="outline" className="text-[10px] font-mono border-purple-500/40 text-purple-400">
+              {mlAccuracy?.best_model ?? 'ML'} Active
+            </Badge>
+          </div>
+
+          {/* ML Score + Model Comparison + Feature Importance */}
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+
+            {/* ML Score Gauge Card */}
+            {current.ml && (
+              <Card className={cn(
+                "border transition-all duration-500",
+                current.ml.score >= 60
+                  ? "border-red-500/30 bg-red-50/50 dark:bg-red-500/10"
+                  : current.ml.score >= 40
+                  ? "border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10"
+                  : "border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10"
+              )}>
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <CardTitle className="text-sm font-mono text-muted-foreground tracking-wider flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-purple-400" />
+                    PREDIKSI ML REAL-TIME
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 flex flex-col items-center gap-3">
+                  <MLScoreGauge
+                    score={current.ml.score}
+                    confidence={current.ml.confidence}
+                    prediction={current.ml.prediction}
+                  />
+                  {/* Skor dari tiap model */}
+                  {current.ml.detail?.rf && (
+                    <div className="w-full space-y-1.5 text-xs font-mono">
+                      {[
+                        { label: 'Random Forest', key: 'rf', color: 'hsl(148 68% 42%)' },
+                        { label: 'Decision Tree', key: 'dt', color: 'hsl(204 86% 53%)' },
+                        { label: 'Naive Bayes',   key: 'nb', color: 'hsl(270 65% 65%)' },
+                      ].map(({ label, key, color }) => {
+                        const m = (current.ml!.detail as any)[key];
+                        if (!m) return null;
+                        return (
+                          <div key={key} className="flex items-center gap-2">
+                            <span className="w-24 text-muted-foreground text-[10px]">{label}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${m.score}%`, background: color }} />
+                            </div>
+                            <span className="w-10 text-right text-[10px] text-foreground">{m.score}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Model Comparison (akurasi dari training) */}
+            {mlAccuracy && <ModelComparisonCard mlData={mlAccuracy} />}
+
+            {/* Feature Importance */}
+            {mlFeatures.length > 0 && <FeatureImportanceBar data={mlFeatures} />}
+          </div>
+        </div>
+      )}
+
       {/* ── Chart ── */}
-      <Card className="card-glass border-border/50">
+      <Card className="border-border">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <CardTitle className="text-sm font-mono text-muted-foreground tracking-wider flex items-center gap-2">
@@ -390,15 +595,15 @@ export default function DashboardPage() {
             const min  = Math.min(...vals);
             const max  = Math.max(...vals);
             return (
-              <Card key={key} className="card-glass border-border/40 px-4 py-3">
+              <Card key={key} className="border-border px-4 py-3 shadow-sm">
                 <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
                   {key === "ph" ? "pH" : key === "turbidity" ? "Turbidity" : "TDS"} — Statistik
                 </p>
                 <div className="grid grid-cols-3 gap-1 text-center">
                   {[["AVG", avg], ["MIN", min], ["MAX", max]].map(([lbl, v]) => (
                     <div key={String(lbl)}>
-                      <p className="text-[9px] text-muted-foreground/60 font-mono">{lbl}</p>
-                      <p className="text-sm font-mono font-bold text-foreground">
+                      <p className="text-[9px] text-muted-foreground">{lbl}</p>
+                      <p className="text-sm font-mono font-bold">
                         {(v as number).toFixed(key === "tds" ? 0 : 2)}
                       </p>
                     </div>

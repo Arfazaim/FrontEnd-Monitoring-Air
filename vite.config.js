@@ -11,6 +11,16 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Proxy API requests ke backend (menghindari CORS di development)
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL
+          ? process.env.VITE_API_URL.replace('/api', '')
+          : 'http://192.168.1.7:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

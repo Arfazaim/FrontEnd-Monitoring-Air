@@ -6,58 +6,103 @@
 
 @layer base {
   :root {
-    --background: 222 25% 8%;
-    --foreground: 210 20% 92%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-    --card: 222 22% 11%;
-    --card-foreground: 210 20% 92%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-    --popover: 222 22% 11%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 180 75% 48%;
-    --primary-foreground: 222 25% 8%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 222 18% 16%;
-    --secondary-foreground: 210 20% 82%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 222 18% 14%;
-    --muted-foreground: 215 15% 50%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 180 75% 48%;
-    --accent-foreground: 222 25% 8%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
-    --destructive: 0 75% 58%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
     --success: 148 68% 42%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 95% 52%;
-    --warning-foreground: 222 25% 8%;
+    --warning-foreground: 240 5.9% 10%;
 
-    --border: 222 18% 18%;
-    --input: 222 18% 18%;
-    --ring: 180 75% 48%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 222 25% 6%;
-    --sidebar-foreground: 210 20% 70%;
-    --sidebar-primary: 180 75% 48%;
-    --sidebar-primary-foreground: 222 25% 8%;
-    --sidebar-accent: 222 20% 12%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 222 18% 14%;
-    --sidebar-ring: 180 75% 48%;
+    --sidebar-background: 240 5.9% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --font-display: 'Syne', sans-serif;
+    --font-display: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    --chart-ph: 180 75% 48%;
+    --chart-ph: 199 89% 48%;
     --chart-turbidity: 38 95% 52%;
     --chart-tds: 270 65% 65%;
     --chart-battery: 148 68% 42%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 148 68% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 95% 52%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -67,77 +112,13 @@
     @apply bg-background text-foreground;
     font-family: var(--font-display);
   }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: hsl(var(--muted)); }
-  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
 }
 
 @layer utilities {
   .font-mono { font-family: var(--font-mono); }
   .font-display { font-family: var(--font-display); }
-
-  .glow-primary {
-    box-shadow: 0 0 24px hsl(180 75% 48% / 0.2), 0 0 60px hsl(180 75% 48% / 0.06);
-  }
-  .glow-success {
-    box-shadow: 0 0 20px hsl(148 68% 42% / 0.25);
-  }
-  .glow-destructive {
-    box-shadow: 0 0 20px hsl(0 75% 58% / 0.25);
-  }
-  .glow-warning {
-    box-shadow: 0 0 20px hsl(38 95% 52% / 0.2);
-  }
-
-  .card-glass {
-    background: hsl(var(--card) / 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.6);
-  }
-
-  .status-good { color: hsl(148 68% 42%); }
-  .status-warning { color: hsl(38 95% 52%); }
-  .status-danger { color: hsl(0 75% 58%); }
-  .status-neutral { color: hsl(180 75% 48%); }
-
-  .grid-scan {
-    background-image:
-      linear-gradient(hsl(var(--border) / 0.15) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.15) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-
-  .animate-scan {
-    animation: scan 3s ease-in-out infinite;
-  }
-
-  @keyframes scan {
-    0%, 100% { opacity: 0.4; transform: translateY(0); }
-    50% { opacity: 1; transform: translateY(2px); }
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-slide-in {
-    animation: slideIn 0.3s ease-out forwards;
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-8px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  .ticker-pulse {
-    animation: tickerPulse 2s ease-in-out infinite;
-  }
-  @keyframes tickerPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
-  }
 }
